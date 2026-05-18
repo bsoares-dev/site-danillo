@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "../src/lib/supabase";
 
 type Memory = {
@@ -13,6 +13,11 @@ type Memory = {
 export default function GalleryPage() {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Referências para o Iframe do YouTube e controle do card ativo
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [playingCardId, setPlayingCardId] = useState<string | null>(null);
+
   const supabase = createClient();
 
   useEffect(() => {
@@ -33,6 +38,27 @@ export default function GalleryPage() {
     fetchMemories();
   }, [supabase]);
 
+  // Lógica de envio de comandos para a API do YouTube
+  const handleToggleAudio = (cardId: string) => {
+    if (!iframeRef.current || !iframeRef.current.contentWindow) return;
+
+    if (playingCardId === cardId) {
+      // Clicou na foto que já estava tocando: Pausa o vídeo
+      iframeRef.current.contentWindow.postMessage(
+        '{"event":"command","func":"pauseVideo","args":""}',
+        "*",
+      );
+      setPlayingCardId(null);
+    } else {
+      // Clicou em uma nova foto: Dá play no vídeo
+      iframeRef.current.contentWindow.postMessage(
+        '{"event":"command","func":"playVideo","args":""}',
+        "*",
+      );
+      setPlayingCardId(cardId);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#faf8f9] flex items-center justify-center">
@@ -44,34 +70,68 @@ export default function GalleryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#faf8f9] py-24 px-6 sm:px-12">
+    <main className="min-h-screen bg-[#faf8f9] py-24 px-6 sm:px-12 relative overflow-hidden">
+      {/* Player do YouTube Invisível com API ativada e cortes (0:05 a 3:38) */}
+      <iframe
+        ref={iframeRef}
+        className="hidden"
+        width="0"
+        height="0"
+        src="https://www.youtube.com/embed/yzTuBuRdAyA?enablejsapi=1&start=5&end=218&autoplay=0&controls=0&playsinline=1"
+        allow="autoplay"
+      ></iframe>
+
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-20 space-y-3">
           <h1 className="text-4xl md:text-5xl font-serif text-zinc-900 tracking-tight">
-            Nossa História
+            Memórias
           </h1>
           <p className="text-zinc-400 font-light tracking-widest uppercase text-xs">
-            Nossas lembranças até aqui
+            Linha do tempo protegida
           </p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {memories.map((memory) => (
-            <FlipCard key={memory.id} memory={memory} />
+            <FlipCard
+              key={memory.id}
+              memory={memory}
+              onToggleAudio={() => handleToggleAudio(memory.id)}
+            />
           ))}
         </div>
+
+        <footer className="mt-32 pb-8 text-center">
+          <a
+            href="/admin"
+            className="text-zinc-300 hover:text-zinc-600 transition-colors text-[10px] uppercase tracking-[0.2em] font-light"
+          >
+            Painel de Controle
+          </a>
+        </footer>
       </div>
     </main>
   );
 }
 
-function FlipCard({ memory }: { memory: Memory }) {
+function FlipCard({
+  memory,
+  onToggleAudio,
+}: {
+  memory: Memory;
+  onToggleAudio: () => void;
+}) {
   const [isFlipped, setIsFlipped] = useState(false);
+
+  const handleClick = () => {
+    setIsFlipped(!isFlipped);
+    onToggleAudio();
+  };
 
   return (
     <div
       className="relative w-full aspect-[3/4] cursor-pointer group [perspective:1000px]"
-      onClick={() => setIsFlipped(!isFlipped)}
+      onClick={handleClick}
     >
       <div
         className={`w-full h-full transition-all duration-[800ms] [transform-style:preserve-3d] border border-zinc-100 shadow-sm ${

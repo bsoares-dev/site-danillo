@@ -17,13 +17,11 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Estados para controle de edição
   const [editingId, setEditingId] = useState<string | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string>("");
 
   const supabase = createClient();
 
-  // Buscar lista de memórias para o painel de gerenciamento
   const fetchMemories = async () => {
     const { data, error } = await supabase
       .from("memories")
@@ -36,7 +34,6 @@ export default function AdminPage() {
     fetchMemories();
   }, []);
 
-  // Ativar o modo de edição carregando os dados no formulário
   const handleEditClick = (memory: Memory) => {
     setEditingId(memory.id);
     setDateText(memory.date_text);
@@ -45,7 +42,6 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Cancelar o modo de edição
   const handleCancelEdit = () => {
     setEditingId(null);
     setFile(null);
@@ -54,13 +50,13 @@ export default function AdminPage() {
     setCurrentImageUrl("");
   };
 
-  // Deletar registro do banco
   const handleDeleteClick = async (id: string) => {
     if (!confirm("Confirmar a exclusão definitiva deste registro?")) return;
 
     const { error } = await supabase.from("memories").delete().eq("id", id);
     if (error) {
-      alert("Erro ao excluir do banco de dados.");
+      alert("Erro ao excluir do banco de dados. Verifique o console.");
+      console.error(error);
     } else {
       fetchMemories();
     }
@@ -73,7 +69,6 @@ export default function AdminPage() {
     try {
       let finalImageUrl = currentImageUrl;
 
-      // Se um novo arquivo foi selecionado, faz o upload
       if (file) {
         const fileExt = file.name.split(".").pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -92,7 +87,6 @@ export default function AdminPage() {
       }
 
       if (editingId) {
-        // Modo de Edição: Atualizar registro existente
         const { error: updateError } = await supabase
           .from("memories")
           .update({
@@ -105,7 +99,6 @@ export default function AdminPage() {
         if (updateError) throw updateError;
         alert("Registro atualizado com sucesso.");
       } else {
-        // Modo de Criação: Inserir novo registro
         if (!file) {
           alert("Selecione uma imagem para o novo registro.");
           setLoading(false);
@@ -126,7 +119,7 @@ export default function AdminPage() {
       fetchMemories();
     } catch (error) {
       console.error(error);
-      alert("Ocorreu um erro na operação. Verifique os logs.");
+      alert("Ocorreu um erro na operação. Verifique os logs (F12).");
     } finally {
       setLoading(false);
     }
@@ -135,6 +128,16 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#faf8f9] py-12 px-6">
       <div className="max-w-4xl mx-auto space-y-12">
+        {/* Botão de Voltar */}
+        <div className="mb-8">
+          <a
+            href="/"
+            className="text-xs font-semibold text-zinc-400 hover:text-zinc-900 uppercase tracking-widest transition-colors flex items-center gap-2 w-fit"
+          >
+            &larr; Voltar para a Galeria
+          </a>
+        </div>
+
         {/* Formulário de Upload/Edição */}
         <div className="bg-white p-10 border border-zinc-200 shadow-sm rounded-none">
           <div className="mb-10 text-center">
