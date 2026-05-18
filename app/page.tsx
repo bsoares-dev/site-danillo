@@ -83,8 +83,8 @@ export default function GalleryPage() {
 
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-20 space-y-3">
-          <h1 className="text-4xl md:text-5xl font-serif text-zinc-900 tracking-tight">
-            Memórias
+          <h1 className="text-4xl md:text-5xl font-serif text-[#de9dac] tracking-tight">
+            Tour em nossos momentos
           </h1>
           <p className="text-zinc-400 font-light tracking-widest uppercase text-xs">
             Linha do tempo protegida
