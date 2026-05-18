@@ -1,65 +1,103 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { createClient } from "../src/lib/supabase";
+
+type Memory = {
+  id: string;
+  image_url: string;
+  date_text: string;
+  message: string;
+};
+
+export default function GalleryPage() {
+  const [memories, setMemories] = useState<Memory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchMemories = async () => {
+      const { data, error } = await supabase
+        .from("memories")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Erro ao buscar dados:", error);
+      } else {
+        setMemories(data || []);
+      }
+      setLoading(false);
+    };
+
+    fetchMemories();
+  }, [supabase]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#faf8f9] flex items-center justify-center">
+        <span className="text-zinc-400 tracking-widest uppercase text-xs font-semibold animate-pulse">
+          Carregando registros...
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-[#faf8f9] py-24 px-6 sm:px-12">
+      <div className="max-w-6xl mx-auto">
+        <header className="text-center mb-20 space-y-3">
+          <h1 className="text-4xl md:text-5xl font-serif text-zinc-900 tracking-tight">
+            Nossa História
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-zinc-400 font-light tracking-widest uppercase text-xs">
+            Nossas lembranças até aqui
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {memories.map((memory) => (
+            <FlipCard key={memory.id} memory={memory} />
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function FlipCard({ memory }: { memory: Memory }) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  return (
+    <div
+      className="relative w-full aspect-[3/4] cursor-pointer group [perspective:1000px]"
+      onClick={() => setIsFlipped(!isFlipped)}
+    >
+      <div
+        className={`w-full h-full transition-all duration-[800ms] [transform-style:preserve-3d] border border-zinc-100 shadow-sm ${
+          isFlipped ? "[transform:rotateY(180deg)]" : ""
+        }`}
+      >
+        {/* Face Frontal */}
+        <div className="absolute inset-0 [backface-visibility:hidden] bg-white">
+          <img
+            src={memory.image_url}
+            alt="Registro visual"
+            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-102"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+        </div>
+
+        {/* Face Traseira */}
+        <div className="absolute inset-0 h-full w-full bg-white px-8 py-12 text-center [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-center items-center border border-zinc-200 shadow-inner">
+          <span className="text-zinc-900 font-serif italic text-base mb-6 block border-b border-zinc-200 pb-3 w-3/4 mx-auto">
+            {memory.date_text}
+          </span>
+          <p className="text-zinc-600 font-light leading-relaxed text-sm tracking-wide">
+            {memory.message}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
