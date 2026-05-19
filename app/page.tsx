@@ -14,7 +14,6 @@ export default function GalleryPage() {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Referências para o Iframe do YouTube e controle do card ativo
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [playingCardId, setPlayingCardId] = useState<string | null>(null);
 
@@ -34,23 +33,19 @@ export default function GalleryPage() {
       }
       setLoading(false);
     };
-
     fetchMemories();
   }, [supabase]);
 
-  // Lógica de envio de comandos para a API do YouTube
   const handleToggleAudio = (cardId: string) => {
     if (!iframeRef.current || !iframeRef.current.contentWindow) return;
 
     if (playingCardId === cardId) {
-      // Clicou na foto que já estava tocando: Pausa o vídeo
       iframeRef.current.contentWindow.postMessage(
         '{"event":"command","func":"pauseVideo","args":""}',
         "*",
       );
       setPlayingCardId(null);
     } else {
-      // Clicou em uma nova foto: Dá play no vídeo
       iframeRef.current.contentWindow.postMessage(
         '{"event":"command","func":"playVideo","args":""}',
         "*",
@@ -63,7 +58,7 @@ export default function GalleryPage() {
     return (
       <div className="min-h-screen bg-[#faf8f9] flex items-center justify-center">
         <span className="text-zinc-400 tracking-widest uppercase text-xs font-semibold animate-pulse">
-          Carregando registros...
+          Carregando registos...
         </span>
       </div>
     );
@@ -71,22 +66,22 @@ export default function GalleryPage() {
 
   return (
     <main className="min-h-screen bg-[#faf8f9] py-24 px-6 sm:px-12 relative overflow-hidden">
-      {/* Player do YouTube Invisível com API ativada e cortes (0:05 a 3:38) */}
+      {/* Player do YouTube Oculto - Início aos 41 segundos */}
       <iframe
         ref={iframeRef}
         className="hidden"
         width="0"
         height="0"
-        src="https://www.youtube.com/embed/yzTuBuRdAyA?enablejsapi=1&start=5&end=218&autoplay=0&controls=0&playsinline=1"
+        src="https://www.youtube.com/embed/yzTuBuRdAyA?enablejsapi=1&start=41&end=218&autoplay=0&controls=0&playsinline=1"
         allow="autoplay"
       ></iframe>
 
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-20 space-y-3">
-          <h1 className="text-4xl md:text-5xl font-serif text-[#de9dac] tracking-tight">
-            Tour em nossos momentos
+          <h1 className="text-4xl md:text-5xl font-serif font-bold italic text-[#de9dac] tracking-tight">
+            tour em nossos momentos
           </h1>
-          <p className="text-zinc-400 font-light tracking-widest uppercase text-xs">
+          <p className="text-zinc-400 font-light tracking-[0.3em] uppercase text-[10px]">
             Linha do tempo protegida
           </p>
         </header>
@@ -142,7 +137,7 @@ function FlipCard({
         <div className="absolute inset-0 [backface-visibility:hidden] bg-white">
           <img
             src={memory.image_url}
-            alt="Registro visual"
+            alt="Registo visual"
             className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-102"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
