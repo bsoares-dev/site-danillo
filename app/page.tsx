@@ -8,6 +8,7 @@ type Memory = {
   image_url: string;
   date_text: string;
   message: string;
+  event_date: string; // <-- Adicionado para a ordenação real
 };
 
 export default function GalleryPage() {
@@ -24,7 +25,7 @@ export default function GalleryPage() {
       const { data, error } = await supabase
         .from("memories")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("event_date", { ascending: false }); // <-- Ordena pelas datas mais recentes primeiro
 
       if (error) {
         console.error("Erro ao buscar dados:", error);
@@ -66,7 +67,7 @@ export default function GalleryPage() {
 
   return (
     <main className="min-h-screen bg-[#faf8f9] py-24 px-6 sm:px-12 relative overflow-hidden">
-      {/* Player do YouTube Oculto - Início aos 41 segundos */}
+      {/* Player do YouTube Oculto */}
       <iframe
         ref={iframeRef}
         className="hidden"

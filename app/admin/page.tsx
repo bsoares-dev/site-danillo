@@ -8,12 +8,14 @@ type Memory = {
   image_url: string;
   date_text: string;
   message: string;
+  event_date: string; // <-- Adicionado na tipagem
 };
 
 export default function AdminPage() {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [dateText, setDateText] = useState("");
+  const [eventDate, setEventDate] = useState(""); // <-- Novo estado para controlar a ordenação
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +28,7 @@ export default function AdminPage() {
     const { data, error } = await supabase
       .from("memories")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("event_date", { ascending: false }); // <-- Mudado de created_at para event_date
     if (!error && data) setMemories(data);
   };
 
@@ -37,6 +39,7 @@ export default function AdminPage() {
   const handleEditClick = (memory: Memory) => {
     setEditingId(memory.id);
     setDateText(memory.date_text);
+    setEventDate(memory.event_date || ""); // <-- Carrega a data de ordenação ao editar
     setMessage(memory.message);
     setCurrentImageUrl(memory.image_url);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -46,6 +49,7 @@ export default function AdminPage() {
     setEditingId(null);
     setFile(null);
     setDateText("");
+    setEventDate(""); // <-- Limpa o novo estado
     setMessage("");
     setCurrentImageUrl("");
   };
@@ -92,6 +96,7 @@ export default function AdminPage() {
           .update({
             image_url: finalImageUrl,
             date_text: dateText,
+            event_date: eventDate, // <-- Atualiza no banco
             message: message,
           })
           .eq("id", editingId);
@@ -105,11 +110,14 @@ export default function AdminPage() {
           return;
         }
 
-        const { error: insertError } = await supabase
-          .from("memories")
-          .insert([
-            { image_url: finalImageUrl, date_text: dateText, message: message },
-          ]);
+        const { error: insertError } = await supabase.from("memories").insert([
+          {
+            image_url: finalImageUrl,
+            date_text: dateText,
+            event_date: eventDate, // <-- Insere no banco
+            message: message,
+          },
+        ]);
 
         if (insertError) throw insertError;
         alert("Novo registro salvo com sucesso.");
@@ -121,7 +129,7 @@ export default function AdminPage() {
       console.error(error);
       alert("Ocorreu um erro na operação. Verifique os logs (F12).");
     } finally {
-      setLoading(false);
+      loading && setLoading(false);
     }
   };
 
@@ -167,9 +175,10 @@ export default function AdminPage() {
               )}
             </div>
 
+            {/* Campo de Texto para Exibição Charmosa */}
             <div>
               <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
-                Data do Evento
+                Texto de Data (Exibido no Card)
               </label>
               <input
                 type="text"
@@ -177,6 +186,20 @@ export default function AdminPage() {
                 onChange={(e) => setDateText(e.target.value)}
                 className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 px-4 py-3 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition-colors placeholder:text-zinc-400 text-sm"
                 placeholder="Ex: 12 de Junho de 2024"
+                required
+              />
+            </div>
+
+            {/* NOVO CAMPO: Filtro de Calendário para o Sistema Ordenar Cronologicamente */}
+            <div>
+              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+                Data do Evento (Apenas para Ordenação Automática)
+              </label>
+              <input
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 px-4 py-3 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 transition-colors placeholder:text-zinc-400 text-sm cursor-pointer"
                 required
               />
             </div>
@@ -228,7 +251,7 @@ export default function AdminPage() {
               Registros Cadastrados
             </h2>
             <p className="text-xs text-zinc-400 font-light uppercase tracking-wider">
-              Edição e remoção rápida
+              Edição e remoção rápida (Ordenado pelo mais recente)
             </p>
           </div>
 
@@ -237,7 +260,8 @@ export default function AdminPage() {
               <thead>
                 <tr className="border-b border-zinc-200 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                   <th className="py-3 px-4 w-24">Miniatura</th>
-                  <th className="py-3 px-4 w-40">Data</th>
+                  <th className="py-3 px-4 w-40">Data Texto</th>
+                  <th className="py-3 px-4 w-40">Data Sistema</th>
                   <th className="py-3 px-4">Mensagem</th>
                   <th className="py-3 px-4 text-right w-36">Ações</th>
                 </tr>
@@ -257,6 +281,9 @@ export default function AdminPage() {
                     </td>
                     <td className="py-4 px-4 font-medium text-zinc-900 whitespace-nowrap">
                       {memory.date_text}
+                    </td>
+                    <td className="py-4 px-4 text-zinc-500 text-xs whitespace-nowrap">
+                      {memory.event_date}
                     </td>
                     <td className="py-4 px-4 max-w-xs truncate">
                       {memory.message}
@@ -280,7 +307,7 @@ export default function AdminPage() {
                 {memories.length === 0 && (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="py-8 text-center text-zinc-400 text-xs uppercase tracking-wider font-light"
                     >
                       Nenhum registro encontrado no banco de dados.
